@@ -3,13 +3,16 @@ from flask import Flask, request
 import hashlib
 import time
 import json
-import urllib2
+# import requests
 import xml.etree.ElementTree as ET
 
 app = Flask(__name__)
 app.debug = True
-BASE_URL = 'http://112.124.43.232/v1/wechat-pomodoro'
-ACCESS_TOKEN = '61e13e47ed0b1b6f6a0ebe598d5ddba0c386a0d856487ec84e973d06b1848220'
+# BASE_URL = 'http://112.124.43.232/v1/wechat-pomodoro'
+# ACCESS_TOKEN = '61e13e47ed0b1b6f6a0ebe598d5ddba0c386a0d856487ec84e973d06b1848220'
+# HEADERS = {'Authorization': 'Bearer ' + ACCESS_TOKEN,
+#            'Content-Type': 'application/json'}
+WECHAT_TOKEN = 'asdfuiop'
 
 
 @app.route('/')
@@ -45,7 +48,7 @@ def verification(request):
     timestamp = params.get('timestamp')
     nonce = params.get('nonce')
 
-    token = 'asdfuiop'
+    token = WECHAT_TOKEN
     tmplist = [token, timestamp, nonce]
     tmplist.sort()
     tmpstr = ''.join(tmplist)
@@ -58,10 +61,10 @@ def verification(request):
 
 def parse_msg(msg):
     root = ET.fromstring(msg)
-    msg = {}
+    parsed_msg = {}
     for child in root:
-        msg[child.tag] = child.text
-    return msg
+        parsed_msg[child.tag] = child.text
+    return parsed_msg
 
 
 def is_text_msg(msg):
@@ -71,8 +74,8 @@ def is_text_msg(msg):
 def is_subscribe_event_msg(msg):
     return msg['MsgType'] == 'event' and msg['Event'] == 'subscribe'
 
-TEXT_MSG = \
-u"""
+
+TEXT_MSG = u"""
 <xml>
 <ToUserName><![CDATA[%s]]></ToUserName>
 <FromUserName><![CDATA[%s]]></FromUserName>
@@ -85,38 +88,17 @@ u"""
 
 
 def response_text_msg(msg, content):
-    s = TEXT_MSG % (msg['FromUserName'], msg['ToUserName'],
-                    str(int(time.time())), content)
-    return s
-
-
-def request_get(url, headers={}):
-    headers['Authorization'] = "Bearer %s" % ACCESS_TOKEN
-    req = urllib2.Request(url, headers=headers)
-    return urllib2.urlopen(req)
-
-
-def request_post(url, data, headers={}):
-    headers['Authorization'] = "Bearer %s" % ACCESS_TOKEN
-    headers['Content-Type'] = 'application/json'
-    req = urllib2.Request(url, data, headers)
-    return urllib2.urlopen(req)
-
-
-def request_put(url, data, headers={}):
-    headers['Authorization'] = "Bearer %s" % ACCESS_TOKEN
-    headers['Content-Type'] = 'application/json'
-    req = urllib2.Request(url, data, headers)
-    req.get_method = lambda: 'PUT'
-    return urllib2.urlopen(req)
+    return TEXT_MSG % (msg['FromUserName'], msg['ToUserName'],
+                       str(int(time.time())), content)
 
 
 def process_text(msg):
-    ds = {'id': 'n'}
-    dp = {'v': 1}
-    request_post("%s/datastreams/%s/datapoints" %
-                 (BASE_URL, ds['id']), json.dumps(dp))
-    return response_text_msg(msg, 'start')
+    # ds = {'id': 'n'}
+    # dp = {'v': 1}
+    # requests.post("%s/datastreams/%s/datapoints" % (BASE_URL, ds['id']),
+    #               data=json.dumps(dp),
+    #               headers=HEADERS)
+    return response_text_msg(msg, json.dumps(msg))
 
 if __name__ == "__main__":
     app.run()
