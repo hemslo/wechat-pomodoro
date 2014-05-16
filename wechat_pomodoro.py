@@ -35,7 +35,7 @@ def wechat_verify():
 def wechat_msg():
     if verification(request):
         msg = parse_msg(request.data)
-        if is_text_msg(msg):
+        if is_text_msg(msg) or is_image_msg(msg):
             return process_text(msg)
         if is_subscribe_event_msg(msg):
             return response_text_msg(msg, 'welcome')
@@ -69,6 +69,10 @@ def parse_msg(msg):
 
 def is_text_msg(msg):
     return msg['MsgType'] == 'text'
+
+
+def is_image_msg(msg):
+    return msg['MsgType'] == 'image'
 
 
 def is_subscribe_event_msg(msg):
